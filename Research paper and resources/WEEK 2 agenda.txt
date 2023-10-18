@@ -1,0 +1,5 @@
+Create a git repo and add all sources(papers, ideas)
+Create an equivalent hashing algorithm, example- simpler version on SHA-0
+Think about how classical preprocessing can be done
+Concentrate on arithmetic operation in hashing algorithm
+Prepare for the next week presentation which includes about our project and progress.
