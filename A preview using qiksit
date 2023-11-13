@@ -1,0 +1,92 @@
+from qiskit import QuantumCircuit, transpile, Aer, assemble
+from qiskit.visualization import plot_histogram
+
+# Define the oracle function
+def sha256_oracle(circuit, input_qubits, output_qubit, aux_qubits):
+    # Apply X gate to the output qubit to flip its state
+    circuit.x(output_qubit)
+    
+    # Apply H gates to all qubits
+    circuit.h([output_qubit] + input_qubits + aux_qubits)
+
+    # Apply the oracle computation: SHA-256 hash
+    for i in range(len(input_qubits)):
+        circuit.cx(input_qubits[i], aux_qubits[i])
+
+    # Apply additional operations for SHA-256 hash
+    circuit.barrier()
+
+    # Apply X gate again to the output qubit
+    circuit.x(output_qubit)
+
+    # Apply H gates again to all qubits
+    circuit.h([output_qubit] + input_qubits + aux_qubits)
+
+# Define the Grover diffusion operator
+def grover_diffusion(circuit, input_qubits, aux_qubits):
+    # Apply H gates to all qubits
+    circuit.h(input_qubits + aux_qubits)
+    
+    # Apply X gates to all qubits
+    circuit.x(input_qubits + aux_qubits)
+
+    # Apply controlled-Z gate
+    circuit.h(aux_qubits[-1])
+    circuit.mcx(input_qubits, aux_qubits[-1], aux_qubits[:-1], mode='basic')  # Specify ancilla_qubits explicitly
+    circuit.h(aux_qubits[-1])
+
+    # Apply X gates again to all qubits
+    circuit.x(input_qubits + aux_qubits)
+
+    # Apply H gates again to all qubits
+    circuit.h(input_qubits + aux_qubits)
+
+# Define the main Grover algorithm
+def grover_algorithm(input_qubits, output_qubit, aux_qubits, oracle_function, diffusion_operator, num_iterations):
+    # Create a quantum circuit
+    grover_circuit = QuantumCircuit(len(input_qubits) + 1 + len(aux_qubits), len(input_qubits))
+
+    # Initialize the input qubits in a superposition
+    grover_circuit.h(input_qubits)
+    
+    # Initialize the auxiliary qubits in the |1⟩ state
+    grover_circuit.x(aux_qubits)
+    grover_circuit.h(aux_qubits)
+
+    # Apply the Grover iterations
+    for _ in range(num_iterations):
+        oracle_function(grover_circuit, input_qubits, output_qubit, aux_qubits)
+        diffusion_operator(grover_circuit, input_qubits, aux_qubits)
+
+    # Measure the input qubits
+    grover_circuit.measure(input_qubits, input_qubits)
+
+    return grover_circuit
+
+# Simulate the Grover algorithm
+def simulate_grover(input_prefix, num_iterations):
+    input_qubits = [i for i in range(len(input_prefix))]
+    output_qubit = len(input_prefix)
+    aux_qubits = [i + len(input_prefix) + 1 for i in range(len(input_prefix))]
+
+    grover_circuit = grover_algorithm(input_qubits, output_qubit, aux_qubits, sha256_oracle, grover_diffusion, num_iterations)
+
+    # Simulate the quantum circuit
+    aer_sim = Aer.get_backend('aer_simulator')
+    grover_circuit = transpile(grover_circuit, aer_sim)
+    qobj = assemble(grover_circuit)
+    result = aer_sim.run(qobj).result()
+
+    # Extract the result
+    counts = result.get_counts(grover_circuit)
+    most_common_result = max(counts, key=counts.get)
+
+    # Extract the binary number
+    found_number = most_common_result[::-1]  # Reverse the bit order
+    return found_number
+
+# Example usage:
+input_prefix = "01000001"  # Updated input prefix
+num_iterations = 10  # Number of Grover iterations
+found_number = simulate_grover(input_prefix, num_iterations)
+print(f"Found a binary number: {found_number}")
