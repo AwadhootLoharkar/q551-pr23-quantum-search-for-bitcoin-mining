@@ -1,0 +1,22 @@
+from typing import Tuple
+from classiq import Model, FunctionLibrary, QASM_INTRO, qfunc, QReg, synthesize
+from classiq.builtin_functions import CustomOracle
+
+
+@qfunc
+def my_oracle_function(a: QReg[2], b: QReg[2]) -> Tuple[QReg[2], QReg[2]]:
+    return QASM_INTRO + "qreg q[4];\ncz q[0], q[1];\ncz q[2], q[3];"
+
+
+library = FunctionLibrary(my_oracle_function)
+
+oracle_params = CustomOracle(
+    custom_oracle="my_oracle_function",
+    custom_oracle_params=library.get_function("my_oracle_function"),
+)
+
+model = Model()
+model.include_library(library)
+model.CustomOracle(oracle_params)
+
+quantum_program = synthesize(model.get_model())
