@@ -41,7 +41,7 @@ def simplified_MD5_8bit(x1):
 
     d = d0 + d1
     
-    result = 'a == ((d ^ (b & (c ^ d))) + (c ^ (d & (b ^ c))) + (b ^ c ^ d) + (c ^ (b | ~(d))) + b)' + ' and' + ' d == ' + str(d) + ' and' + ' a == ' + str(a)
+    result = 'a == ((d ^ (b & (c ^ d))) + (c ^ (d & (b ^ c))) + (b ^ c ^ d) + (c ^ (b | ~(d))) + b)' + ' d == ' + str(0) + ' and' + ' a == ' + str(0) + ' and' + ' b == ' + str(b) + ' and' + ' c == ' + str(c)
     return result
 
 
